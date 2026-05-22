@@ -1,0 +1,30 @@
+# Ignore Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Ignore Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Ignore Environment Variables (API Keys!)
+.env
+
+# Ignore large executables & tools
+ffmpeg.exe
+test_tts.wav
+temp.wav
+
+# Ignore Temporary Upload Audio Folders
+temp/
+
+# Ignore Downloaded Model files (Heavy files > 100MB)
+app/whisper.cpp/models/ggml-*.bin
+# Abaikan folder build di whisper supaya tidak menuhin repo
+app/whisper.cpp/build/
+
+# Ignore log
+log/hasil_evaluasi.csv
