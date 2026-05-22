@@ -26,5 +26,10 @@ app/whisper.cpp/models/ggml-*.bin
 # Abaikan folder build di whisper supaya tidak menuhin repo
 app/whisper.cpp/build/
 
+# Ignore Dataset Audio File (Menghindari limitasi ukuran Github repo)
+data/corpus/audio/*.wav
+data/corpus/audio/*.mp3
+data/corpus/audio/*.m4a
+
 # Ignore log
 log/hasil_evaluasi.csv
