@@ -1,16 +1,21 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 import tempfile
 import os
+import base64
 from .stt import transcribe_speech_to_text
 from .llm import generate_response
 from .tts import text_to_speech
-from .utils import preprocess_audio
+from .utils import preprocess_audio, normalize_text
 
 app = FastAPI(title="Voice CS System", description="API untuk Sistem Multilingual Speech-to-Speech")
 
 @app.post("/voice-chat")
-async def voice_chat(audio: UploadFile = File(...)):
+async def voice_chat(
+    audio: UploadFile = File(...),
+    translate: bool = Form(False),
+    target_lang: str = Form("Indonesian")
+):
     # 1. Simpan file audio/video sementara ke folder temp/
     temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "temp")
     os.makedirs(temp_dir, exist_ok=True)
@@ -32,21 +37,30 @@ async def voice_chat(audio: UploadFile = File(...)):
         # 2. Panggil transcribe_speech_to_text() -> dapat transkrip
         print("Mengeksekusi STT...")
         transkrip = transcribe_speech_to_text(preprocessed_audio_path)
-        print(f"Transkrip: {transkrip}")
+        print(f"Transkrip Mentah: {transkrip}")
+        
+        # 2.5 Normalisasi Transkrip
+        transkrip_norm = normalize_text(transkrip)
+        print(f"Transkrip Hasil Normalisasi: {transkrip_norm}")
 
         # 3. Panggil generate_response() -> dapat teks respons
         print("Mengeksekusi LLM...")
-        respons_teks = generate_response(transkrip)
+        respons_teks = generate_response(transkrip_norm, translate=translate, target_language=target_lang)
         print(f"Teks Respons: {respons_teks}")
 
         # 4. Panggil text_to_speech() -> dapat file audio
         print("Mengeksekusi TTS...")
         text_to_speech(respons_teks, output_audio_path)
 
-        # 5. Return FileResponse(audio_output_path)
-        # Note: cleanup dilakukan via BackgroundTasks di level lanjut,
-        # tapi untuk latihan, FastAPI FileResponse bisa mengembalikan file langsung.
-        return FileResponse(output_audio_path, media_type="audio/wav")
+        # 5. Baca audio menjadi base64 dan return bersama teks sebagai JSON
+        with open(output_audio_path, "rb") as f:
+            audio_base64 = base64.b64encode(f.read()).decode("utf-8")
+
+        return JSONResponse(content={
+            "transkrip": transkrip_norm,
+            "respons_teks": respons_teks,
+            "audio_base64": audio_base64
+        })
     
     finally:
         # 6. Hapus file input temp setelah selesai (file output biarkan agar bisa dikirim sebagai respon)

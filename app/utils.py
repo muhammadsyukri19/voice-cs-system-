@@ -1,15 +1,19 @@
 import subprocess
 import os
+import re
+
+def normalize_text(text: str) -> str:
+    """
+    Membersihkan teks (STT) dari kata-kata filler (contoh: eeh, hmm) dan menormalisasi spasi berlebih.
+    """
+    fillers = [r'\bee\b', r'\beeh\b', r'\bemm\b', r'\buh\b', r'\bum\b', r'\bhmm\b']
+    for filler in fillers:
+        text = re.sub(filler, '', text, flags=re.IGNORECASE)
+    
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
 def preprocess_audio(input_path: str, output_path: str) -> str:
-    """
-    Mengonversi input (baik file video, rekaman audio webm/dari Gradio) 
-    menjadi format audio wajib yang dibutuhkan whisper.cpp:
-    - Ekstensi: .wav
-    - Sample Rate: 16000 Hz
-    - Channels: 1 (Mono)
-    - Codec: pcm_s16le
-    """
     # Mencari ffmpeg.exe di root folder proyek
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ffmpeg_path = os.path.join(base_dir, "ffmpeg.exe")
